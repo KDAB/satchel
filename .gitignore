@@ -1,3 +1,4 @@
 /build/
 /target/
+/examples/ctest-integration/build/
 Cargo.lock

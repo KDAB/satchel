@@ -1,31 +1,18 @@
-# Rust CTest Integration
+# Satchel - Rust and CTest Integration
 
-This project demonstrates how to build a Rust test suite as a native executable and run it either via CTest (CMake) or directly with Cargo.
+## Overview
 
-## 🔧 Requirements
+Satchel provides a framework for integrating Rust tests into a C++ project using `CTest`. It uses Rust's test harness combined with a custom `#[test]` macro to allow tests to be executed via CMake and CTest.
 
-- CMake >= 3.16
-- Rust (with `cargo`)
-- A C++ compiler
+This project sets up a test harness in Rust, and provides a mechanism to call Rust test functions from C++ via a `libsatchel` library, utilizing `libtest_mimic` for running tests and generating test results.
 
-## 🚀 Run Tests
+## Project Structure
 
-You can run the Rust tests using either **Cargo** directly or **CTest** through CMake:
-
-### Option 1: Run Tests with Cargo
-
-```bash
-cd rust_test_export
-cargo run --bin run_tests --features tests
+```plaintext
+crates/
+  satchel/                 # Core library for the Rust tests
+  satchel-macro/           # Custom procedural macro for the #[test] attribute
+examples/
+  ctest-integration/       # Example C++ project using CTest to run Rust tests
+Cargo.toml                 # Cargo workspace manifest
 ```
-
-### Option 2: Run Tests with CTest
-
-```bash
-mkdir build
-cd build
-cmake ..
-cmake --build .
-ctest --output-on-failure
-```
-
