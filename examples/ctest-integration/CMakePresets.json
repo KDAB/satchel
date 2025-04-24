@@ -1,0 +1,20 @@
+{
+    "version": 2,
+    "configurePresets": [
+        {
+            "name": "ctest_gcc",
+            "description": "A basic preset to build in RelWithDebInfo mode with gcc",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build_${presetName}",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            },
+            "environment": {
+                "CC": "/usr/bin/gcc",
+                "CXX": "/usr/bin/g++",
+                "CCACHE_DISABLE": "ON"
+            }
+        }
+    ]
+}

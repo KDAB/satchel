@@ -1,4 +1,6 @@
 /build/
 /target/
 /examples/ctest-integration/build/
+/examples/ctest-integration/build_ctest_gcc/
+/.vscode/
 Cargo.lock
