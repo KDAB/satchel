@@ -4,5 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+libtest-mimic = "0.8"
+linkme = "0.3"
 satchel-macro = { path = "../satchel-macro" }
 

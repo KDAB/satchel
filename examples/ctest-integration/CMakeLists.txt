@@ -15,12 +15,17 @@ if(NOT Corrosion_FOUND)
 endif()
 
 corrosion_import_crate(
-    MANIFEST_PATH ${CMAKE_CURRENT_SOURCE_DIR}/Cargo.toml
+    MANIFEST_PATH ${CMAKE_SOURCE_DIR}/somelib/Cargo.toml
     CRATES somelib
-    )
+)
 
-add_executable(run_rust_tests main.cpp)
-target_link_libraries(run_rust_tests PRIVATE somelib)
+corrosion_import_crate(
+    MANIFEST_PATH ${CMAKE_SOURCE_DIR}/otherlib/Cargo.toml
+    CRATES otherlib
+)
+
+add_executable(testTarget  main.cpp)
+target_link_libraries(testTarget PRIVATE otherlib somelib)
 
 enable_testing()
-add_test(NAME RustTests COMMAND run_rust_tests)
+add_test(NAME RustTests COMMAND testTarget)
