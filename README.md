@@ -1,50 +1,115 @@
-# Satchel - Rust and CTest Integration
+# Satchel
 
 ## Overview
 
-Satchel provides a framework for integrating Rust tests into a C++ project using `CTest`. It uses Rust's test harness combined with a custom `#[test]` macro to allow tests to be executed via CMake and CTest.
+Satchel is a flexible test collection framework for Rust projects. It allows you to register tests and benchmarks using custom macros (`#[test]`, `#[bench]`), and provides a programmable interface for discovering and collecting tests outside of Rust’s default test runner.
 
-This project sets up a test harness in Rust, and provides a mechanism to call Rust test functions from C++ via a `libsatchel` library, utilizing `libtest_mimic` for running tests and generating test results.
+Satchel is ideal for advanced integration scenarios, such as:
+- Integrating Rust test execution into C++ projects via CMake/CTest,
+- Running Rust tests from other languages or environments,
+- Collecting and filtering test metadata for custom reporting.
 
-## Requirements
-
--- CMake >= 3.14
--- Rust (with `cargo`)
--- A C++ compiler
+Satchel uses distributed slices to register test cases at compile time, and exposes APIs to enumerate and run tests programmatically. This makes it easy to build your own test harness, integrate with external tools, or embed Rust testing into larger polyglot projects.
 
 ## Project Structure
 
 ```plaintext
 crates/
-  satchel/                 # Core library for the Rust tests
-  satchel-macro/           # Custom procedural macro for the #[test] attribute
+  satchel/                 # Core library for the Rust tests and test harness
+  satchel-macro/           # Custom procedural macro for #[test] and #[bench]
 examples/
   ctest-integration/       # Example C++ project using CTest to run Rust tests
+    somelib/               # Example Rust library with tests
+    otherlib/              # Another Rust library with tests
 Cargo.toml                 # Cargo workspace manifest
 ```
 
-## Build and run the ctest-integration example
+## How It Works
+
+- **Test Registration:**  
+  Consumer crates (like `somelib` or `otherlib`) use the `#[test]` and `#[bench]` macros from Satchel to register test functions. These macros use [`linkme`](https://crates.io/crates/linkme) to collect test metadata into a distributed slice at compile time.
+
+- **Test Harness:**  
+  The test harness in `satchel` exposes a getter for all registered tests in the current crate.
+  Consumer crates are responsible for providing a test harness and are free to choose any test harness they like.
+  Our examples export a `*_tests_main` function that runs all tests using `libtest-mimic`.
+
+- **CTest Integration:**  
+  CMake builds the Rust libraries as `cdylib` and links them into the C++ test runner. The C++ main function calls the exported test entry points, and the results are reported to CTest.
+
+## Adding Tests in a Consumer Crate
+
+1. **Add Satchel as a Dependency:**
+    ```toml
+    [dependencies]
+    satchel = { path = "../../../crates/satchel" }
+    ```
+
+2. **Write Tests Using the Macros:**
+    ```rust
+    use satchel::{test, bench};
+
+    #[test]
+    fn my_unit_test() {
+        assert_eq!(2 + 2, 4);
+    }
+
+    #[bench]
+    fn my_benchmark() {
+        for i in 0..1000 {
+            let _ = i + 1;
+        }
+    }
+    ```
+
+3. **Export a Test Runner:**
+    ```rust
+    #[no_mangle]
+    pub extern "C" fn some_tests_main() -> i32 {
+        let tests = satchel::get_tests!();
+        let args = libtest_mimic::Arguments::from_args();
+        if run_tests(tests, args) { 0 } else { 1 }
+    }
+    ```
+
+4. **Implement `run_tests`:**
+    See [`examples/ctest-integration/somelib/src/lib.rs`](examples/ctest-integration/somelib/src/lib.rs) for a full example.
+
+## Building and Running the Example
 
 ```bash
 cd examples/ctest-integration
-cmake --preset gcc && cd build_ctest_gcc && ninja && ./run_rust_tests
+cmake --preset ctest-example
+cmake --build build-ctest-example
+cd build-ctest-example
+ctest
 ```
 
 ## Known Issues
-Tests may be optimized out in staticlib builds
+
+**Tests may be optimized out in staticlib builds:**  
 When building a client crate with `crate-type = ["staticlib"]`, test functions registered via `#[linkme::distributed_slice]` may be optimized out by the compiler in certain build profiles (especially debug), because they are not explicitly referenced. This results in tests silently not running or being excluded from the final binary.
 
-### Workarounds:
-Use cdylib instead of staticlib
-When using `crate-type = ["cdylib"]`, you're telling Cargo to build a C-compatible dynamic library, which causes the Rust compiler and linker to preserve all `#[no_mangle]`
-and exported symbols (and also all statics with internal linkage), because it assumes they might be used externally (e.g., from C or via dlsym).
+### Workarounds
 
-```toml
-[lib]
-crate-type = ["cdylib"]
-```
-Alternatively, use RUSTFLAGS="-C link-dead-code" during compilation to prevent dead code elimination:
+- **Use cdylib instead of staticlib:**  
+  When using `crate-type = ["cdylib"]`, you're telling Cargo to build a C-compatible dynamic library, which causes the Rust compiler and linker to preserve all `#[no_mangle]` and exported symbols (and also all statics with internal linkage), because it assumes they might be used externally (e.g., from C or via dlsym).
 
-```sh
-RUSTFLAGS="-C link-dead-code" cargo build
+    ```toml
+    [lib]
+    crate-type = ["cdylib"]
+    ```
+
+## Advanced: Custom Test Filtering
+
+You can filter tests by module path using the `get_tests_for_crate` function:
+
+```rust
+let tests = satchel::test_harness::get_tests_for_crate("my_crate_prefix");
 ```
+
+## References
+
+- [`satchel`](crates/satchel/src/lib.rs)
+- [`satchel-macro`](crates/satchel-macro/src/lib.rs)
+- [`somelib`](examples/ctest-integration/somelib/src/lib.rs)
