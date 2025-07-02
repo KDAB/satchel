@@ -100,14 +100,6 @@ When building a client crate with `crate-type = ["staticlib"]`, test functions r
     crate-type = ["cdylib"]
     ```
 
-## Advanced: Custom Test Filtering
-
-You can filter tests by module path using the `get_tests_for_crate` function:
-
-```rust
-let tests = satchel::test_harness::get_tests_for_crate("my_crate_prefix");
-```
-
 ## References
 
 - [`satchel`](crates/satchel/src/lib.rs)

@@ -1,6 +1,5 @@
 // examples/ctest-integration/src/lib.rs
 use libtest_mimic::{Arguments, Failed, Trial};
-use satchel::test_harness;
 use std::panic;
 
 fn run_tests(tests: &[satchel::test_harness::TestCase], args: Arguments) -> bool {
@@ -62,7 +61,7 @@ fn run_tests(tests: &[satchel::test_harness::TestCase], args: Arguments) -> bool
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn some_tests_main() -> i32 {
-    let tests_ref = satchel::test_harness::get_tests_for_crate(module_path!());
+    let tests_ref = satchel::get_tests!();
     let tests: Vec<satchel::test_harness::TestCase> = tests_ref.into_iter().cloned().collect();
     let args = Arguments::from_args();
 

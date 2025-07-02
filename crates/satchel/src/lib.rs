@@ -17,17 +17,55 @@ pub struct TestCase {
 }
 
 pub mod test_harness {
-    pub use crate::{TestCase, TestFn, TestKind};
+    pub use crate::TestCase;
     use linkme::distributed_slice;
 
+    #[doc(hidden)]
     #[distributed_slice]
     pub static TESTS: [TestCase];
+}
 
-    /// Returns only the tests whose module_path starts with the given prefix.
-    pub fn get_tests_for_crate(crate_prefix: &str) -> Vec<&'static TestCase> {
-        TESTS
-            .iter()
-            .filter(|case| case.module_path.starts_with(crate_prefix))
-            .collect()
+#[doc(hidden)]
+pub fn extract_crate_name(module_path: &str) -> &str {
+    module_path
+        .split("::")
+        .next()
+        .expect("Split never returns a empty iterator")
+}
+
+#[doc(hidden)]
+pub fn get_tests_for_crate(crate_prefix: &str) -> Vec<&'static TestCase> {
+    let crate_name = extract_crate_name(crate_prefix);
+    test_harness::TESTS
+        .iter()
+        .filter(|case| case.module_path.starts_with(crate_name))
+        .collect()
+}
+
+#[macro_export]
+macro_rules! get_tests {
+    () => {
+        ::satchel::get_tests_for_crate(::std::module_path!())
+    };
+}
+
+#[cfg(test)]
+mod tests {
+    use super::extract_crate_name;
+
+    #[test]
+    fn handles_empty_string() {
+        assert_eq!(extract_crate_name(""), "");
+    }
+
+    #[test]
+    fn extracts_simple_crate_name() {
+        assert_eq!(extract_crate_name("mycrate"), "mycrate");
+    }
+
+    #[test]
+    fn extracts_crate_name_with_module() {
+        assert_eq!(extract_crate_name("mycrate::foo"), "mycrate");
+        assert_eq!(extract_crate_name("mycrate::foo::bar"), "mycrate");
     }
 }

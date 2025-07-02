@@ -27,7 +27,7 @@ fn expand_test_or_bench(
     let static_name = format_ident!("{}{}", prefix, fn_name_str.to_uppercase());
 
     let expanded = quote! {
-        #[linkme::distributed_slice(crate::test_harness::TESTS)]
+        #[linkme::distributed_slice(::satchel::test_harness::TESTS)]
         static #static_name: ::satchel::test_harness::TestCase = ::satchel::test_harness::TestCase {
             name: #fn_name_str,
             module_path: ::std::module_path!(),
