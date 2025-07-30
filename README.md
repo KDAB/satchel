@@ -21,8 +21,22 @@ examples/
   ctest-integration/       # Example C++ project using CTest to run Rust tests
     somelib/               # Example Rust library with tests
     otherlib/              # Another Rust library with tests
+  rust-examples/           # Pure Rust examples using custom test harnesses
+    minimal_mimic_harness/     # Minimal libtest-mimic harness, no satchel
+    satchel_harness_demo/      # Demonstrates satchel test registration/discovery
 Cargo.toml                 # Cargo workspace manifest
 ```
+
+## Rust-Only Examples
+
+- **minimal_mimic_harness/**  
+  Shows the simplest possible test harness using only [`libtest-mimic`](https://crates.io/crates/libtest-mimic).  
+  No macros, no automatic test registration—tests are manually listed.
+
+- **satchel_harness_demo/**  
+  Demonstrates how to use [`satchel`](crates/satchel/src/lib.rs) for automatic test registration and discovery in a pure Rust crate.  
+  Uses custom `#[test]` and `#[bench]` macros, distributed slices, and a programmable test runner.  
+  Includes a helper function for test discovery and a single entry point for running all tests.
 
 ## How It Works
 
@@ -85,6 +99,18 @@ cd build-ctest-example
 ctest
 ```
 
+## Running Rust-Only Examples
+
+To run the pure Rust examples:
+
+```bash
+cd examples/rust-examples/minimal_mimic_harness
+cargo run
+
+cd ../satchel_harness_demo
+cargo run --bin satchel_demo_tests
+```
+
 ## Known Issues
 
 **Tests may be optimized out in staticlib builds:**  
@@ -105,3 +131,5 @@ When building a client crate with `crate-type = ["staticlib"]`, test functions r
 - [`satchel`](crates/satchel/src/lib.rs)
 - [`satchel-macro`](crates/satchel-macro/src/lib.rs)
 - [`somelib`](examples/ctest-integration/somelib/src/lib.rs)
+- [`satchel_harness_demo`](examples/rust-examples/satchel_harness_demo/src/lib.rs)
+- [`minimal_mimic_harness`](examples/rust-examples/minimal_mimic_harness/)

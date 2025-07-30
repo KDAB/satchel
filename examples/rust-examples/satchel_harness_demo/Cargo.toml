@@ -1,0 +1,17 @@
+[package]
+name = "satchel_harness_demo"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+libtest-mimic = "0.8"
+linkme = "0.3"
+satchel = { path = "../../../crates/satchel" }
+
+[lib]
+name = "satchel_demo"
+path = "src/lib.rs"
+
+[[bin]]
+name = "satchel_demo_tests"
+path = "src/main.rs"
