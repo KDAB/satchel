@@ -5,6 +5,5 @@ members = [
     "crates/satchel-macro",
     "examples/ctest-integration/otherlib",
     "examples/ctest-integration/somelib",
-    "examples/rust-examples/minimal_mimic_harness",
-    "examples/rust-examples/satchel_harness_demo",
+    "examples/rust-examples/satchel-demo",
 ]

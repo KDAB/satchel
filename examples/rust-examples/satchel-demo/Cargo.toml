@@ -1,5 +1,5 @@
 [package]
-name = "satchel_harness_demo"
+name = "satchel_demo"
 version = "0.1.0"
 edition = "2024"
 
@@ -12,6 +12,6 @@ satchel = { path = "../../../crates/satchel" }
 name = "satchel_demo"
 path = "src/lib.rs"
 
-[[bin]]
-name = "satchel_demo_tests"
-path = "src/main.rs"
+[[test]]
+name  = "satchel_demo"
+harness = false

@@ -66,6 +66,11 @@ fn run_tests(tests: &[satchel::test_harness::TestCase], args: Arguments) -> bool
     !libtest_mimic::run(&args, trials).has_failed()
 }
 
+fn main() {
+    let success = discover_and_run();
+    std::process::exit(if success { 0 } else { 1 });
+}
+
 pub fn multiply(left: i32, right: i32) -> i32 {
     left * right
 }
