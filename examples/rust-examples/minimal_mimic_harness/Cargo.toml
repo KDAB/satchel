@@ -1,7 +1,0 @@
-[package]
-name = "minimal_mimic_harness"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
-libtest-mimic = "0.8"
