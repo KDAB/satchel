@@ -1,10 +1,13 @@
 [package]
 name = "satchel"
 version = "0.1.0"
-edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/KDAB/satchel/"
+edition = "2024"
+description = "Test registration and discovery crate. Satchel uses linkme for test registration and exposes APIs for test discovery."
 
 [dependencies]
 libtest-mimic = "0.8"
 linkme = "0.3"
-satchel-macro = { path = "../satchel-macro" }
+satchel-macro = "0.1.0"
 

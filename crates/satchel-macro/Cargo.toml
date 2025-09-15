@@ -1,7 +1,10 @@
 [package]
 name = "satchel-macro"
 version = "0.1.0"
-edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/KDAB/satchel"
+edition = "2024"
+description = "Procedural macros for satchel, enabling ergonomic test registration and discovery."
 
 [lib]
 proc-macro = true
