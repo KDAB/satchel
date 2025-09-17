@@ -1,3 +1,5 @@
+#![no_std]
+
 pub use satchel_macro::{bench, test};
 
 pub type TestFn = fn();
@@ -34,12 +36,11 @@ pub fn extract_crate_name(module_path: &str) -> &str {
 }
 
 #[doc(hidden)]
-pub fn get_tests_for_crate(crate_prefix: &str) -> Vec<&'static TestCase> {
+pub fn get_tests_for_crate(crate_prefix: &str) -> impl Iterator<Item = &'static TestCase> {
     let crate_name = extract_crate_name(crate_prefix);
     test_harness::TESTS
         .iter()
-        .filter(|case| case.module_path.starts_with(crate_name))
-        .collect()
+        .filter(move |case| case.module_path.starts_with(crate_name))
 }
 
 #[macro_export]
