@@ -1,18 +1,16 @@
 use libtest_mimic::{Arguments, Failed, Trial};
 use std::panic;
+use satchel::TestCase;
 
 pub fn discover_and_run() -> bool {
-    let tests_ref = satchel::get_tests!();
-    let tests: Vec<satchel::test_harness::TestCase> = tests_ref.into_iter().cloned().collect();
+    let tests = satchel::get_tests!();
 
     let args = Arguments::from_args();
-    run_tests(&tests, args)
+    run_tests(tests, args)
 }
 
-fn run_tests(tests: &[satchel::test_harness::TestCase], args: Arguments) -> bool {
+fn run_tests(tests: impl Iterator<Item=&'static TestCase>, args: Arguments) -> bool {
     let trials: Vec<Trial> = tests
-        .iter()
-        .cloned()
         .map(|case| {
             let kind_str = format!("{:?}", case.kind);
             let full_name = format!("{}::{}", case.module_path, case.name);
