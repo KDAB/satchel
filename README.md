@@ -9,7 +9,10 @@ Satchel is ideal for advanced integration scenarios, such as:
 - Running Rust tests from other languages or environments,
 - Collecting and filtering test metadata for custom reporting.
 
-Satchel uses distributed slices to register test cases at compile time, and exposes APIs to enumerate and run tests programmatically. This makes it easy to build your own test harness, integrate with external tools, or embed Rust testing into larger polyglot projects.
+Satchel uses distributed slices using the [linkme crate](https://crates.io/crates/linkme) to register test cases at compile time, and exposes APIs to enumerate and run tests programmatically. This makes it easy to build your own test harness, integrate with external tools, or embed Rust testing into larger polyglot projects.
+
+Please note that platform support depends on the platforms supported by the [linkme crate](https://crates.io/crates/linkme).
+See the linkme README for supported platforms.
 
 ## Project Structure
 
