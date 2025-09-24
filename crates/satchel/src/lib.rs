@@ -16,6 +16,7 @@ pub struct TestCase {
     pub module_path: &'static str,
     pub kind: TestKind,
     pub test_fn: TestFn,
+    pub should_panic: Option<&'static str>,
 }
 
 pub mod test_harness {
@@ -46,7 +47,7 @@ pub fn get_tests_for_crate(crate_prefix: &str) -> impl Iterator<Item = &'static 
 #[macro_export]
 macro_rules! get_tests {
     () => {
-        ::satchel::get_tests_for_crate(::std::module_path!())
+        ::satchel::get_tests_for_crate(::core::module_path!())
     };
 }
 

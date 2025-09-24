@@ -7,6 +7,7 @@ edition = "2024"
 libtest-mimic = "0.8"
 linkme = "0.3"
 satchel = { path = "../../../crates/satchel" }
+test-runner = { path = "../../test-runner" }
 
 [lib]
 crate-type = ["cdylib"]
