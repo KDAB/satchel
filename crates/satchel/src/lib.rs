@@ -11,15 +11,21 @@ pub enum TestKind {
 }
 
 #[derive(Debug, Clone, Copy)]
+pub struct ShouldPanic {
+    pub expected: Option<&'static str>,
+}
+
+#[derive(Debug, Clone, Copy)]
 pub struct TestCase {
     pub name: &'static str,
     pub module_path: &'static str,
     pub kind: TestKind,
     pub test_fn: TestFn,
+    pub should_panic: Option<ShouldPanic>,
 }
 
 pub mod test_harness {
-    pub use crate::TestCase;
+    pub use crate::{ShouldPanic, TestCase};
     use linkme::distributed_slice;
 
     #[doc(hidden)]
@@ -46,7 +52,7 @@ pub fn get_tests_for_crate(crate_prefix: &str) -> impl Iterator<Item = &'static 
 #[macro_export]
 macro_rules! get_tests {
     () => {
-        ::satchel::get_tests_for_crate(::std::module_path!())
+        ::satchel::get_tests_for_crate(::core::module_path!())
     };
 }
 
