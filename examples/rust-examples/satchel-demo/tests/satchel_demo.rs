@@ -65,10 +65,37 @@ pub mod tests {
         panic!("Error: invalid multiplier in calculation");
     }
 
+    #[test]
+    #[ignore]
+    fn test_ignored_simple() {
+        assert_eq!(multiply(2, 2), 4);
+    }
+
+    #[test]
+    #[ignore]
+    fn test_ignored_failing() {
+        assert_eq!(multiply(2, 2), 5, "This test fails but is ignored");
+    }
+
+    #[test]
+    #[ignore]
+    #[should_panic]
+    fn test_ignored_with_panic() {
+        panic!("This panic is ignored");
+    }
+
     #[bench]
     fn bench_multiply() {
         for i in 0..500 {
             let _ = multiply(i, i + 1);
+        }
+    }
+
+    #[bench]
+    #[ignore]
+    fn bench_multiply_ignored() {
+        for i in 0..1000 {
+            let _ = multiply(i, i * 2);
         }
     }
 }
