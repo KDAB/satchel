@@ -85,6 +85,11 @@ fn expand_test_or_bench(
         })
         .unwrap_or(quote! { ::core::option::Option::None });
 
+    let ignore = input_fn
+        .attrs
+        .iter()
+        .any(|attr| attr.path().is_ident("ignore"));
+
     let expanded = quote! {
         #[linkme::distributed_slice(::satchel::test_harness::TESTS)]
         static #static_name: ::satchel::TestCase = ::satchel::TestCase {
@@ -93,6 +98,7 @@ fn expand_test_or_bench(
             kind: #kind,
             test_fn: #fn_name,
             should_panic: #should_panic,
+            ignore: #ignore,
         };
 
         #input_fn

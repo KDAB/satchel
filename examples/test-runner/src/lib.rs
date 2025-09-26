@@ -12,7 +12,7 @@ pub fn run_tests(tests: impl Iterator<Item = &'static TestCase>, args: Arguments
             match case.kind {
                 satchel::TestKind::Unit => {
                     let should_panic = case.should_panic.clone();
-                    Trial::test(full_name, move || {
+                    let trial = Trial::test(full_name, move || {
                         let result = panic::catch_unwind(|| (case.test_fn)());
                         match (should_panic, result) {
                             (Some(panic_info), Err(e)) => {
@@ -41,10 +41,15 @@ pub fn run_tests(tests: impl Iterator<Item = &'static TestCase>, args: Arguments
                             (None, Err(e)) => Err(Failed::from(format!("Unexpected panic: {:?}", e))),
                         }
                     })
-                    .with_kind(kind_str)
+                    .with_kind(kind_str);
+                    if case.ignore {
+                        trial.with_ignored_flag(case.ignore)
+                    } else {
+                        trial
+                    }
                 }
                 satchel::TestKind::Benchmark => {
-                    Trial::bench(full_name, move |test_mode| {
+                    let trial = Trial::bench(full_name, move |test_mode| {
                         let result = panic::catch_unwind(|| (case.test_fn)());
                         match (test_mode, result) {
                             (true, Ok(_)) => Ok(None),
@@ -78,7 +83,12 @@ pub fn run_tests(tests: impl Iterator<Item = &'static TestCase>, args: Arguments
                             }
                         }
                     })
-                    .with_kind(kind_str)
+                    .with_kind(kind_str);
+                    if case.ignore {
+                        trial.with_ignored_flag(case.ignore)
+                    } else {
+                        trial
+                    }
                 }
             }
         })

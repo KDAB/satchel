@@ -34,7 +34,8 @@ Cargo.toml                 # Cargo workspace manifest
 
 **satchel-demo/**
   Demonstrates how to use [`satchel`](crates/satchel/src/lib.rs) for automatic test registration and discovery in a pure Rust crate.
-  Uses custom `#[test]`, `#[bench]` and `#[should_panic]` macros, distributed slices, and the shared test runner from `examples/test-runner`.
+  Uses custom `#[test]` and `#[bench]` macros, distributed slices, and the shared test runner from `examples/test-runner`.
+  Shows how to use `#[should_panic]` with expected panic messages and `#[ignore]` for tests that should be skipped by default.
 
 ## How It Works
 
@@ -67,6 +68,18 @@ Cargo.toml                 # Cargo workspace manifest
         assert_eq!(2 + 2, 4);
     }
 
+    #[test]
+    #[should_panic(expected = "overflow")]
+    fn test_panic_with_message() {
+        panic!("integer overflow detected");
+    }
+
+    #[test]
+    #[ignore]
+    fn expensive_test() {
+        assert_eq!(2 + 2, 4);
+    }
+
     #[bench]
     fn my_benchmark() {
         for i in 0..1000 {
@@ -87,7 +100,6 @@ Cargo.toml                 # Cargo workspace manifest
     if test_runner::run_tests(tests, args) { 0 } else { 1 }
   }
   ```
-
   4. **Implement `run_tests`:**
     See [`examples/ctest-integration/somelib/src/lib.rs`](examples/ctest-integration/somelib/src/lib.rs) for a full example, including support for `#[should_panic]` and expected panic messages.
 
@@ -113,6 +125,18 @@ Or to run a specific example crate:
 
 ```bash
 cargo test --package satchel_demo --test satchel_demo -- tests --show-output
+```
+
+To run ignored tests:
+
+```bash
+cargo test --package satchel_demo --test satchel_demo -- --ignored
+```
+
+To run all tests including ignored ones:
+
+```bash
+cargo test --package satchel_demo --test satchel_demo -- --include-ignored
 ```
 
 ## Known Issues

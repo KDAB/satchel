@@ -22,6 +22,7 @@ pub struct TestCase {
     pub kind: TestKind,
     pub test_fn: TestFn,
     pub should_panic: Option<ShouldPanic>,
+    pub ignore: bool,
 }
 
 pub mod test_harness {
