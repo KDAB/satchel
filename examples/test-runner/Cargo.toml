@@ -1,0 +1,8 @@
+[package]
+name = "test-runner"
+version = "0.2.0"
+edition = "2024"
+
+[dependencies]
+satchel = { path = "../../crates/satchel" }
+libtest-mimic = "0.8.1"
