@@ -2,7 +2,7 @@ use libtest_mimic::{Arguments, Failed, Trial};
 use satchel::test_harness::TestCase;
 use std::panic;
 
-pub fn run_tests(tests: impl Iterator<Item=&'static TestCase>, args: Arguments) -> bool {
+pub fn run_tests(tests: impl Iterator<Item = &'static TestCase>, args: Arguments) -> bool {
     let trials: Vec<Trial> = tests
         .map(|case| {
             let kind_str = format!("{:?}", case.kind);

@@ -1,11 +1,15 @@
-use libtest_mimic::{Arguments};
+use libtest_mimic::Arguments;
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn some_tests_main() -> i32 {
     let tests = satchel::get_tests!();
     let args = Arguments::from_args();
 
-    if test_runner::run_tests(tests, args) { 0 } else { 1 }
+    if test_runner::run_tests(tests, args) {
+        0
+    } else {
+        1
+    }
 }
 
 pub fn add(left: u64, right: u64) -> u64 {

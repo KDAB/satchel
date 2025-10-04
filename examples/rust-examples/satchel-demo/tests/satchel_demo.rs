@@ -1,9 +1,9 @@
-use libtest_mimic::{Arguments};
+use libtest_mimic::Arguments;
 
 pub fn discover_and_run() -> bool {
     let tests = satchel::get_tests!();
     let args = Arguments::from_args();
-    
+
     test_runner::run_tests(tests, args)
 }
 
@@ -13,8 +13,8 @@ fn main() {
 }
 
 pub mod tests {
-    use satchel_demo::multiply;
     use satchel::{bench, test};
+    use satchel_demo::multiply;
 
     #[test]
     fn test_multiply_positive() {
