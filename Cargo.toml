@@ -6,4 +6,5 @@ members = [
     "examples/ctest-integration/otherlib",
     "examples/ctest-integration/somelib",
     "examples/rust-examples/satchel-demo",
+    "examples/test-runner",
 ]
