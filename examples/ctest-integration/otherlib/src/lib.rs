@@ -1,4 +1,5 @@
 use libtest_mimic::Arguments;
+use test_runner;
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn other_tests_main() -> i32 {

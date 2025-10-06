@@ -18,9 +18,10 @@ See the linkme README for supported platforms.
 
 ```plaintext
 crates/
-  satchel/                 # Core library for the Rust tests and test harness
-  satchel-macro/           # Custom procedural macro for #[test] and #[bench]
+  satchel/                 # Core library for Rust test registration/discovery
+  satchel-macro/           # Procedural macro for #[test] and #[bench]
 examples/
+  test-runner/             # Shared test runner crate for all examples
   ctest-integration/       # Example C++ project using CTest to run Rust tests
     somelib/               # Example Rust library with tests
     otherlib/              # Another Rust library with tests
@@ -31,22 +32,22 @@ Cargo.toml                 # Cargo workspace manifest
 
 ## Rust-Only Examples
 
-- **satchel-demo/**  
-  Demonstrates how to use [`satchel`](crates/satchel/src/lib.rs) for automatic test registration and discovery in a pure Rust crate.  
-  Uses custom `#[test]` and `#[bench]` macros, distributed slices, and a programmable test runner.  
-  Includes a helper function for test discovery and a single entry point for running all tests.
+**satchel-demo/**
+  Demonstrates how to use [`satchel`](crates/satchel/src/lib.rs) for automatic test registration and discovery in a pure Rust crate.
+  Uses custom `#[test]`, `#[bench]` and `#[should_panic]` macros, distributed slices, and the shared test runner from `examples/test-runner`.
 
 ## How It Works
 
-- **Test Registration:**  
-  Consumer crates (like `somelib` or `otherlib`) use the `#[test]` and `#[bench]` macros from Satchel to register test functions. These macros use [`linkme`](https://crates.io/crates/linkme) to collect test metadata into a distributed slice at compile time.
+**Test Registration:**
+  Consumer crates (like `somelib`, `otherlib`, or `satchel-demo`) use the `#[test]` and `#[bench]` macros from Satchel to register test functions. These macros use [`linkme`](https://crates.io/crates/linkme) to collect test metadata into a distributed slice at compile time.
 
-- **Test Harness:**  
+**Test Harness:**
   The test harness in `satchel` exposes a getter for all registered tests in the current crate.
   Consumer crates are responsible for providing a test harness and are free to choose any test harness they like.
   Our examples export a `*_tests_main` function that runs all tests using `libtest-mimic`.
+  The example crates use the shared test runner from `examples/test-runner`, which provides a unified API for running tests and benchmarks.
 
-- **CTest Integration:**  
+**CTest Integration:**
   CMake builds the Rust libraries as `cdylib` and links them into the C++ test runner. The C++ main function calls the exported test entry points, and the results are reported to CTest.
 
 ## Adding Tests in a Consumer Crate
@@ -75,17 +76,20 @@ Cargo.toml                 # Cargo workspace manifest
     ```
 
 3. **Export a Test Runner:**
-    ```rust
-    #[no_mangle]
-    pub extern "C" fn some_tests_main() -> i32 {
-        let tests = satchel::get_tests!();
-        let args = libtest_mimic::Arguments::from_args();
-        if run_tests(tests, args) { 0 } else { 1 }
-    }
-    ```
+  ```rust
+  use libtest_mimic::Arguments;
+  use test_runner;
 
-4. **Implement `run_tests`:**
-    See [`examples/ctest-integration/somelib/src/lib.rs`](examples/ctest-integration/somelib/src/lib.rs) for a full example.
+  #[no_mangle]
+  pub extern "C" fn some_tests_main() -> i32 {
+    let tests = satchel::get_tests!().map(|t| *t).collect::<Vec<_>>();
+    let args = Arguments::from_args();
+    if test_runner::run_tests(tests, args) { 0 } else { 1 }
+  }
+  ```
+
+  4. **Implement `run_tests`:**
+    See [`examples/ctest-integration/somelib/src/lib.rs`](examples/ctest-integration/somelib/src/lib.rs) for a full example, including support for `#[should_panic]` and expected panic messages.
 
 ## Building and Running the Example
 
@@ -105,14 +109,20 @@ To run the pure Rust examples:
 cargo test
 ```
 
+Or to run a specific example crate:
+
+```bash
+cargo test --package satchel_demo --test satchel_demo -- tests --show-output
+```
+
 ## Known Issues
 
-**Tests may be optimized out in staticlib builds:**  
+**Tests may be optimized out in staticlib builds:**
 When building a client crate with `crate-type = ["staticlib"]`, test functions registered via `#[linkme::distributed_slice]` may be optimized out by the compiler in certain build profiles (especially debug), because they are not explicitly referenced. This results in tests silently not running or being excluded from the final binary.
 
 ### Workarounds
 
-- **Use cdylib instead of staticlib:**  
+**Use cdylib instead of staticlib:**
   When using `crate-type = ["cdylib"]`, you're telling Cargo to build a C-compatible dynamic library, which causes the Rust compiler and linker to preserve all `#[no_mangle]` and exported symbols (and also all statics with internal linkage), because it assumes they might be used externally (e.g., from C or via dlsym).
 
     ```toml

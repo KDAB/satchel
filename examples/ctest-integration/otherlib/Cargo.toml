@@ -9,6 +9,5 @@ linkme = "0.3"
 satchel = { path = "../../../crates/satchel" }
 test-runner = { path = "../../test-runner" }
 
-
 [lib]
 crate-type = ["cdylib"]
