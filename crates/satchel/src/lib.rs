@@ -10,12 +10,12 @@ pub enum TestKind {
     Benchmark,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct ShouldPanic {
     pub expected: Option<&'static str>,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct TestCase {
     pub name: &'static str,
     pub module_path: &'static str,

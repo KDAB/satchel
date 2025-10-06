@@ -11,7 +11,7 @@ pub fn run_tests(tests: impl Iterator<Item = &'static TestCase>, args: Arguments
 
             match case.kind {
                 satchel::TestKind::Unit => {
-                    let should_panic = case.should_panic;
+                    let should_panic = case.should_panic.clone();
                     Trial::test(full_name, move || {
                         let result = panic::catch_unwind(|| (case.test_fn)());
                         match (should_panic, result) {
