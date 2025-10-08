@@ -9,17 +9,11 @@ pub fn run_tests(tests: impl Iterator<Item = &'static TestCase>, args: Arguments
 
 fn format_test_name(case: &TestCase) -> String {
     let base_name = format!("{}::{}", case.module_path, case.name);
-
-    match &case.ignore {
-        Some(ignore) => {
-            if let Some(reason) = ignore.reason {
-                format!("{} (ignored: {})", base_name, reason)
-            } else {
-                base_name
-            }
-        }
-        None => base_name,
-    }
+    case.ignore
+        .as_ref()
+        .and_then(|info| info.reason)
+        .map(|reason| format!("{} (ignored: {})", base_name, reason))
+        .unwrap_or(base_name)
 }
 
 fn apply_ignore_flag(trial: Trial, case: &TestCase) -> Trial {
