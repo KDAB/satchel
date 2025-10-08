@@ -88,7 +88,29 @@ fn expand_test_or_bench(
     let ignore = input_fn
         .attrs
         .iter()
-        .any(|attr| attr.path().is_ident("ignore"));
+        .find(|attr| attr.path().is_ident("ignore"))
+        .map(|attr| {
+            // Handle #[ignore = "reason"]
+            if let syn::Meta::NameValue(nv) = &attr.meta {
+                if let syn::Expr::Lit(expr_lit) = &nv.value {
+                    if let syn::Lit::Str(lit_str) = &expr_lit.lit {
+                        let reason = lit_str.value();
+                        return quote! {
+                            ::core::option::Option::Some(::satchel::Ignore {
+                                reason: ::core::option::Option::Some(#reason),
+                            })
+                        };
+                    }
+                }
+            }
+            // Handle #[ignore] without reason
+            quote! {
+                ::core::option::Option::Some(::satchel::Ignore {
+                    reason: ::core::option::Option::None,
+                })
+            }
+        })
+        .unwrap_or(quote! { ::core::option::Option::None });
 
     let expanded = quote! {
         #[linkme::distributed_slice(::satchel::test_harness::TESTS)]

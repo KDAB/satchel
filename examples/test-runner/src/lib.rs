@@ -6,7 +6,16 @@ pub fn run_tests(tests: impl Iterator<Item = &'static TestCase>, args: Arguments
     let trials: Vec<Trial> = tests
         .into_iter()
         .map(|case| {
-            let full_name = format!("{}::{}", case.module_path, case.name);
+            // Include ignore reason in the name if test is ignored and has a reason
+            let full_name = if let Some(ignore_info) = &case.ignore {
+                if let Some(reason) = ignore_info.reason {
+                    format!("{}::{} ({})", case.module_path, case.name, reason)
+                } else {
+                    format!("{}::{}", case.module_path, case.name)
+                }
+            } else {
+                format!("{}::{}", case.module_path, case.name)
+            };
             let kind_str = format!("{:?}", case.kind);
 
             match case.kind {
@@ -42,8 +51,8 @@ pub fn run_tests(tests: impl Iterator<Item = &'static TestCase>, args: Arguments
                         }
                     })
                     .with_kind(kind_str);
-                    if case.ignore {
-                        trial.with_ignored_flag(case.ignore)
+                    if let Some(_ignore_info) = &case.ignore {
+                        trial.with_ignored_flag(true)
                     } else {
                         trial
                     }
@@ -84,8 +93,8 @@ pub fn run_tests(tests: impl Iterator<Item = &'static TestCase>, args: Arguments
                         }
                     })
                     .with_kind(kind_str);
-                    if case.ignore {
-                        trial.with_ignored_flag(case.ignore)
+                    if let Some(_ignore_info) = &case.ignore {
+                        trial.with_ignored_flag(true)
                     } else {
                         trial
                     }

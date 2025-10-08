@@ -65,23 +65,35 @@ pub mod tests {
         panic!("Error: invalid multiplier in calculation");
     }
 
+    // Test with ignore reason using #[ignore = "..."]
     #[test]
-    #[ignore]
+    #[ignore = "not yet implemented"]
     fn test_ignored_simple() {
         assert_eq!(multiply(2, 2), 4);
     }
 
+    // Test with plain #[ignore] (no reason)
     #[test]
     #[ignore]
     fn test_ignored_failing() {
         assert_eq!(multiply(2, 2), 5, "This test fails but is ignored");
     }
 
+    // Combining #[ignore] with #[should_panic]
     #[test]
     #[ignore]
     #[should_panic]
     fn test_ignored_with_panic() {
         panic!("This panic is ignored");
+    }
+
+    // Another test with ignore reason
+    #[test]
+    #[ignore = "performance test - takes too long"]
+    fn test_ignored_performance() {
+        for i in 0..1000000 {
+            assert!(multiply(i, 1) == i);
+        }
     }
 
     #[bench]
