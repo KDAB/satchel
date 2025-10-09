@@ -8,17 +8,14 @@ pub fn run_tests(tests: impl Iterator<Item = &'static TestCase>, args: Arguments
 }
 
 fn format_test_name(case: &TestCase) -> String {
-    let base_name = format!("{}::{}", case.module_path, case.name);
+    // Use a stable name without appending ignore reasons so --exact matching is simple
+    format!("{}::{}", case.module_path, case.name)
+}
 
-    match &case.ignore {
-        Some(ignore) => {
-            if let Some(reason) = ignore.reason {
-                format!("{} (ignored: {})", base_name, reason)
-            } else {
-                base_name
-            }
-        }
-        None => base_name,
+fn format_kind(case: &TestCase) -> String {
+    match case.ignore.as_ref().and_then(|i| i.reason) {
+        Some(reason) => format!("{:?} (ignored: {})", case.kind, reason),
+        None => format!("{:?}", case.kind),
     }
 }
 
@@ -87,7 +84,7 @@ fn run_benchmark(test_fn: fn()) -> Result<Option<libtest_mimic::Measurement>, Fa
 
 fn create_trial_for_case(case: &'static TestCase) -> Trial {
     let full_name = format_test_name(case);
-    let kind_str = format!("{:?}", case.kind);
+    let kind_str = format_kind(case);
 
     match case.kind {
         satchel::TestKind::Unit => {
