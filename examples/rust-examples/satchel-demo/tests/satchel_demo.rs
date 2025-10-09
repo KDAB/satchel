@@ -1,10 +1,52 @@
 use libtest_mimic::Arguments;
+use std::env;
 use test_runner;
 
 pub fn discover_and_run() -> bool {
-    let tests = satchel::get_tests!();
+    // Check for `--list` before parsing libtest-mimic args, because nextest
+    // may pass flags like `--format terse` that libtest-mimic doesn't know about.
+    let args_raw: Vec<String> = env::args().collect();
+    if args_raw.iter().any(|a| a == "--list") {
+        // nextest manual harness contract: https://nexte.st/docs/design/custom-test-harnesses/
+        // - MUST support `--list --format terse` and print only `name: kind` lines to stdout
+        // - MUST support `--list --format terse --ignored` to print exactly the set of ignored tests
+        let list_ignored = args_raw.iter().any(|a| a == "--ignored");
+
+        let mut tests: Vec<&'static satchel::TestCase> = satchel::get_tests!().collect();
+        // Sort to provide a stable, alphabetical order similar to nextest's listing
+        tests.sort_by_key(|t| (t.module_path, t.name));
+
+        // Emit text format expected by nextest fallback list parser
+        for t in &tests {
+            // Listing policy:
+            // - Default (no --ignored): list only non-ignored tests
+            // - With --ignored: list only ignored tests
+            if list_ignored {
+                if t.ignore.is_none() {
+                    continue;
+                }
+            } else {
+                if t.ignore.is_some() {
+                    continue;
+                }
+            }
+
+            let full_name = format!("{}::{}", t.module_path, t.name);
+            // Do not append ignore reasons to names; keep names identical to runtime Trial names
+            let suffix = match t.kind {
+                satchel::TestKind::Unit => "test",
+                // nextest expects the suffix to be ': benchmark'
+                satchel::TestKind::Benchmark => "benchmark",
+            };
+            // Name must exactly match runtime trial name for filters to work
+            println!("{}: {}", full_name, suffix);
+        }
+        return true;
+    }
+
+    // Normal run via libtest-mimic
     let args = Arguments::from_args();
-    test_runner::run_tests(tests, args)
+    test_runner::run_tests(satchel::get_tests!(), args)
 }
 
 fn main() {
