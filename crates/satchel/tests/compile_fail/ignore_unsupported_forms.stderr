@@ -1,0 +1,23 @@
+error: only #[ignore] and #[ignore = "..."] forms are supported
+ --> tests/compile_fail/ignore_unsupported_forms.rs:6:1
+  |
+6 | #[ignore(bad)]
+  | ^^^^^^^^^^^^^^
+
+error: only #[ignore] and #[ignore = "..."] forms are supported
+  --> tests/compile_fail/ignore_unsupported_forms.rs:11:1
+   |
+11 | #[ignore("reason")]
+   | ^^^^^^^^^^^^^^^^^^^
+
+error: only #[ignore] and #[ignore = "..."] forms are supported
+  --> tests/compile_fail/ignore_unsupported_forms.rs:16:1
+   |
+16 | #[ignore = 123]
+   | ^^^^^^^^^^^^^^^
+
+error: duplicate #[ignore] attribute
+  --> tests/compile_fail/ignore_unsupported_forms.rs:22:1
+   |
+22 | #[ignore = "reason"]
+   | ^^^^^^^^^^^^^^^^^^^^
