@@ -3,7 +3,6 @@ resolver = "2"
 members = [
     "crates/satchel",
     "crates/satchel-macro",
-    "examples/test-runner",
     "examples/ctest-integration/otherlib",
     "examples/ctest-integration/somelib",
     "examples/rust-examples/satchel-demo",
