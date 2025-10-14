@@ -10,3 +10,6 @@ description = "Test registration and discovery crate. Satchel uses linkme for te
 linkme = "0.3"
 satchel-macro = { path = "../satchel-macro" }
 
+[dev-dependencies]
+trybuild = "1"
+

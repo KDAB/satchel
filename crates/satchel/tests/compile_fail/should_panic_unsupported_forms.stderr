@@ -1,0 +1,41 @@
+error: unsupported form in #[should_panic]; allowed: #[should_panic], #[should_panic(expected = "..."), #[should_panic = "..."], #[should_panic("...")]
+ --> tests/compile_fail/should_panic_unsupported_forms.rs:6:1
+  |
+6 | #[should_panic("a", "b")]
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: unsupported form in #[should_panic]; allowed: #[should_panic], #[should_panic(expected = "..."), #[should_panic = "..."], #[should_panic("...")]
+  --> tests/compile_fail/should_panic_unsupported_forms.rs:11:1
+   |
+11 | #[should_panic(expected = "boom", "other")]
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: unsupported form in #[should_panic]; allowed: #[should_panic], #[should_panic(expected = "..."), #[should_panic = "..."], #[should_panic("...")]
+  --> tests/compile_fail/should_panic_unsupported_forms.rs:16:1
+   |
+16 | #[should_panic("boom", expected = "boom")]
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: unsupported form in #[should_panic]; allowed: #[should_panic], #[should_panic(expected = "..."), #[should_panic = "..."], #[should_panic("...")]
+  --> tests/compile_fail/should_panic_unsupported_forms.rs:21:16
+   |
+21 | #[should_panic(bad = "format")]
+   |                ^^^^^^^^^^^^^^
+
+error: unsupported form in #[should_panic]; allowed: #[should_panic], #[should_panic(expected = "..."), #[should_panic = "..."], #[should_panic("...")]
+  --> tests/compile_fail/should_panic_unsupported_forms.rs:26:16
+   |
+26 | #[should_panic(message = 123)]
+   |                ^^^^^^^^^^^^^
+
+error: duplicate #[should_panic] expected message
+  --> tests/compile_fail/should_panic_unsupported_forms.rs:31:32
+   |
+31 | #[should_panic(expected = "a", expected = "b")]
+   |                                ^^^^^^^^
+
+error: duplicate #[should_panic] attribute
+  --> tests/compile_fail/should_panic_unsupported_forms.rs:37:1
+   |
+37 | #[should_panic(expected = "boom")]
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

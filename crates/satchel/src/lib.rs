@@ -16,16 +16,22 @@ pub struct ShouldPanic {
 }
 
 #[derive(Debug, Clone)]
+pub struct Ignore {
+    pub reason: Option<&'static str>,
+}
+
+#[derive(Debug, Clone)]
 pub struct TestCase {
     pub name: &'static str,
     pub module_path: &'static str,
     pub kind: TestKind,
     pub test_fn: TestFn,
     pub should_panic: Option<ShouldPanic>,
+    pub ignore: Option<Ignore>,
 }
 
 pub mod test_harness {
-    pub use crate::{ShouldPanic, TestCase};
+    pub use crate::{Ignore, ShouldPanic, TestCase};
     use linkme::distributed_slice;
 
     #[doc(hidden)]
