@@ -1,6 +1,60 @@
 use libtest_mimic::{Arguments, Failed, Trial};
 use satchel::test_harness::TestCase;
+use std::cell::Cell;
 use std::panic;
+
+thread_local! {
+    static ACTIVE_CASE_ATTRIBUTES: Cell<&'static [&'static str]> = Cell::new(&[]);
+}
+
+struct CaseAttributesGuard {
+    previous: &'static [&'static str],
+}
+
+impl Drop for CaseAttributesGuard {
+    fn drop(&mut self) {
+        ACTIVE_CASE_ATTRIBUTES.with(|cell| cell.set(self.previous));
+    }
+}
+
+fn push_case_attributes(attributes: &'static [&'static str]) -> CaseAttributesGuard {
+    ACTIVE_CASE_ATTRIBUTES.with(|cell| {
+        let previous = cell.replace(attributes);
+        CaseAttributesGuard { previous }
+    })
+}
+
+fn run_with_case_attributes<F, R>(attributes: &'static [&'static str], f: F) -> R
+where
+    F: FnOnce() -> R,
+{
+    let guard = push_case_attributes(attributes);
+    let result = f();
+    drop(guard);
+    result
+}
+
+fn invoke_test_fn(test_fn: fn(), attributes: &'static [&'static str]) -> std::thread::Result<()> {
+    run_with_case_attributes(attributes, || panic::catch_unwind(|| (test_fn)()))
+}
+
+pub fn current_case_attributes() -> &'static [&'static str] {
+    ACTIVE_CASE_ATTRIBUTES.with(|cell| cell.get())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{current_case_attributes, run_with_case_attributes};
+
+    #[test]
+    fn case_attributes_reset_to_previous() {
+        assert!(current_case_attributes().is_empty());
+        run_with_case_attributes(&["one", "--two=2"], || {
+            assert_eq!(current_case_attributes(), &["one", "--two=2"]);
+        });
+        assert!(current_case_attributes().is_empty());
+    }
+}
 
 pub fn run_tests(tests: impl Iterator<Item = &'static TestCase>, args: Arguments) -> bool {
     let trials: Vec<Trial> = tests.map(create_trial_for_case).collect();
@@ -59,17 +113,22 @@ fn handle_expected_panic(
     Ok(())
 }
 
-fn run_benchmark(test_fn: fn()) -> Result<Option<libtest_mimic::Measurement>, Failed> {
+fn run_benchmark(
+    test_fn: fn(),
+    case_attributes: &'static [&'static str],
+) -> Result<Option<libtest_mimic::Measurement>, Failed> {
     use std::time::Instant;
     const N: u64 = 1000;
     let mut times = Vec::with_capacity(N as usize);
 
-    for _ in 0..N {
-        let start = Instant::now();
-        test_fn();
-        let elapsed = start.elapsed().as_nanos() as f64;
-        times.push(elapsed);
-    }
+    run_with_case_attributes(case_attributes, || {
+        for _ in 0..N {
+            let start = Instant::now();
+            test_fn();
+            let elapsed = start.elapsed().as_nanos() as f64;
+            times.push(elapsed);
+        }
+    });
 
     let avg = times.iter().sum::<f64>() / N as f64;
     let variance = times.iter().map(|&x| (x - avg).powi(2)).sum::<f64>() / N as f64;
@@ -86,16 +145,27 @@ fn create_trial_for_case(case: &'static TestCase) -> Trial {
     match case.kind {
         satchel::TestKind::Unit => {
             let should_panic = case.should_panic.clone();
+            let case_attributes = case.case_attributes;
+            let retry_on_failure = should_panic.is_none()
+                && case_attributes
+                    .iter()
+                    .any(|attr| *attr == "retry_on_failure");
+            let test_fn = case.test_fn;
             let trial = Trial::test(full_name, move || {
-                let result = panic::catch_unwind(|| (case.test_fn)());
-                handle_unit_test(result, should_panic)
+                let mut result = invoke_test_fn(test_fn, case_attributes);
+                if retry_on_failure && result.is_err() {
+                    result = invoke_test_fn(test_fn, case_attributes);
+                }
+                handle_unit_test(result, should_panic.clone())
             })
             .with_kind(kind_str);
             apply_ignore_flag(trial, case)
         }
         satchel::TestKind::Benchmark => {
+            let case_attributes = case.case_attributes;
+            let test_fn = case.test_fn;
             let trial = Trial::bench(full_name, move |test_mode| {
-                let result = panic::catch_unwind(|| (case.test_fn)());
+                let result = invoke_test_fn(test_fn, case_attributes);
                 match (test_mode, result) {
                     (true, Ok(_)) => Ok(None),
                     (true, Err(e)) => Err(Failed::from(format!(
@@ -106,7 +176,7 @@ fn create_trial_for_case(case: &'static TestCase) -> Trial {
                         "Bench panicked in bench mode: {:?}",
                         e
                     ))),
-                    (false, Ok(_)) => run_benchmark(case.test_fn),
+                    (false, Ok(_)) => run_benchmark(test_fn, case_attributes),
                 }
             })
             .with_kind(kind_str);

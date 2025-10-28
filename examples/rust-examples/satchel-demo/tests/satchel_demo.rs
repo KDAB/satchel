@@ -15,6 +15,19 @@ fn main() {
 pub mod tests {
     use satchel::{bench, test};
     use satchel_demo::multiply;
+    use std::sync::Arc;
+    use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+
+    fn attributes_slice() -> &'static [&'static str] {
+        test_runner::current_case_attributes()
+    }
+
+    fn threads_attribute_or(default: usize) -> usize {
+        attributes_slice()
+            .iter()
+            .find_map(|attr| attr.strip_prefix("--threads=")?.parse::<usize>().ok())
+            .unwrap_or(default)
+    }
 
     #[test]
     fn test_multiply_positive() {
@@ -93,6 +106,40 @@ pub mod tests {
     fn test_ignored_performance() {
         for i in 0..1000000 {
             assert!(multiply(i, 1) == i);
+        }
+    }
+
+    #[test("--threads=9")]
+    fn test_attributes_control_parallelism() {
+        let thread_count = threads_attribute_or(1);
+        assert_eq!(thread_count, 9);
+
+        let completions = Arc::new(AtomicUsize::new(0));
+        let handles: Vec<_> = (0..thread_count)
+            .map(|i| {
+                let completions = Arc::clone(&completions);
+                std::thread::spawn(move || {
+                    assert_eq!(multiply(i as i32, 2), (i * 2) as i32);
+                    completions.fetch_add(1, Ordering::SeqCst);
+                })
+            })
+            .collect();
+
+        for handle in handles {
+            handle.join().expect("worker thread panicked");
+        }
+
+        assert_eq!(completions.load(Ordering::SeqCst), thread_count);
+    }
+
+    #[test(retry_on_failure)]
+    fn test_retry_on_failure_runs_twice() {
+        static FIRST_TRY: AtomicBool = AtomicBool::new(true);
+        if FIRST_TRY
+            .compare_exchange(true, false, Ordering::Relaxed, Ordering::Relaxed)
+            .is_ok()
+        {
+            panic!("First try!");
         }
     }
 

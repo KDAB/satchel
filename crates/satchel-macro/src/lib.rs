@@ -1,7 +1,7 @@
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use syn::spanned::Spanned;
-use syn::{ItemFn, MetaNameValue, parse_macro_input};
+use syn::{ItemFn, LitStr, MetaNameValue, Path, parse_macro_input};
 
 // Centralized error message constants to keep stderr expectations stable.
 const UNSUPPORTED_SHOULD_PANIC: &str = "unsupported form in #[should_panic]; allowed: #[should_panic], #[should_panic(expected = \"...\"), #[should_panic = \"...\"], #[should_panic(\"...\")]";
@@ -35,6 +35,44 @@ fn split_comma_separated_tokens(tokens: proc_macro2::TokenStream) -> Vec<proc_ma
     }
 
     segments
+}
+
+fn parse_case_attributes(attr_tokens: TokenStream) -> Result<Vec<LitStr>, syn::Error> {
+    if attr_tokens.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    let segments = split_comma_separated_tokens(attr_tokens.into());
+    let mut parsed = Vec::with_capacity(segments.len());
+
+    for segment in segments {
+        if segment.is_empty() {
+            continue;
+        }
+
+        if let Ok(lit) = syn::parse2::<LitStr>(segment.clone()) {
+            parsed.push(lit);
+            continue;
+        }
+
+        if let Ok(path) = syn::parse2::<Path>(segment.clone()) {
+            let value = path
+                .segments
+                .iter()
+                .map(|seg| seg.ident.to_string())
+                .collect::<Vec<_>>()
+                .join("::");
+            parsed.push(LitStr::new(&value, path.span()));
+            continue;
+        }
+
+        return Err(syn::Error::new_spanned(
+            segment,
+            "only string literals or bare identifiers are supported in #[test(...)]",
+        ));
+    }
+
+    Ok(parsed)
 }
 
 // Helper that returns at most one attribute by name, or an error if duplicates are present.
@@ -233,13 +271,19 @@ fn parse_ignore_attr(attrs: &[syn::Attribute]) -> Result<proc_macro2::TokenStrea
 }
 
 #[proc_macro_attribute]
-pub fn test(_attr: TokenStream, item: TokenStream) -> TokenStream {
-    expand_test_or_bench(item, quote! {::satchel::TestKind::Unit }, "__SATCHEL_TEST_")
+pub fn test(attr: TokenStream, item: TokenStream) -> TokenStream {
+    expand_test_or_bench(
+        attr,
+        item,
+        quote! {::satchel::TestKind::Unit },
+        "__SATCHEL_TEST_",
+    )
 }
 
 #[proc_macro_attribute]
-pub fn bench(_attr: TokenStream, item: TokenStream) -> TokenStream {
+pub fn bench(attr: TokenStream, item: TokenStream) -> TokenStream {
     expand_test_or_bench(
+        attr,
         item,
         quote! { ::satchel::TestKind::Benchmark },
         "__SATCHEL_BENCH_",
@@ -247,6 +291,7 @@ pub fn bench(_attr: TokenStream, item: TokenStream) -> TokenStream {
 }
 
 fn expand_test_or_bench(
+    attr: TokenStream,
     input: TokenStream,
     kind: proc_macro2::TokenStream,
     prefix: &str,
@@ -266,6 +311,10 @@ fn expand_test_or_bench(
     let fn_name = &input_fn.sig.ident;
     let fn_name_str = fn_name.to_string();
     let static_name = format_ident!("{}{}", prefix, fn_name_str.to_uppercase());
+    let case_attribute_literals = match parse_case_attributes(attr) {
+        Ok(list) => list,
+        Err(e) => return e.into_compile_error().into(),
+    };
 
     // Remove should_panic and ignore attributes from the function since we've processed them
     input_fn
@@ -281,6 +330,7 @@ fn expand_test_or_bench(
             test_fn: #fn_name,
             should_panic: #should_panic,
             ignore: #ignore,
+            case_attributes: &[ #( #case_attribute_literals ),* ] as &'static [&'static str],
         };
 
         #input_fn

@@ -35,7 +35,7 @@ Cargo.toml                 # Cargo workspace manifest
 **satchel-demo/**
   Demonstrates how to use [`satchel`](crates/satchel/src/lib.rs) for automatic test registration and discovery in a pure Rust crate.
   Uses custom `#[test]` and `#[bench]` macros, distributed slices, and the shared test runner from `examples/test-runner`.
-  Shows how to use `#[should_panic]` with expected panic messages and `#[ignore]` for tests that should be skipped by default.
+  Shows how to use `#[should_panic]` with expected panic messages, `#[ignore]` for tests that should be skipped by default, and `#[test(...)]` case attributes to tune a specific test case behavior.
 
 ### Supported Attribute Forms
 
@@ -52,6 +52,13 @@ Satchel mirrors many behaviors of Rust's built-in test attributes while remainin
 
 - `#[ignore]` (skip test, no reason)
 - `#[ignore = "reason"]` (skip test, track reason)
+
+`#[test(...)]` / `#[bench(...)]` case attributes:
+
+- `#[test("--flag", "--mode=smoke")]` (string literals forwarded verbatim to the harness)
+- `#[test(feature_toggle, custom::ARG)]` (bare identifiers become `"feature_toggle"`, `"custom::ARG"`, etc.)
+
+Case attributes are exposed on each `TestCase` via the `case_attributes` field. The shared test runner offers `test_runner::current_case_attributes()` so tests and harness logic can read them at runtime, and can react to markers like `retry_on_failure` to adjust execution.
 
 Unsupported forms produce a compile error emitted by the procedural macro (e.g. `#[ignore(foo)]`, `#[should_panic(bad = 1)]`).
 
@@ -80,47 +87,66 @@ Unsupported forms produce a compile error emitted by the procedural macro (e.g. 
 
 2. **Write Tests Using the Macros:**
 
-    ```rust
-    use satchel::{test, bench};
+```rust
+use satchel::{bench, test};
+use test_runner;
 
-    #[test]
-    fn my_unit_test() {
-        assert_eq!(2 + 2, 4);
-    }
+#[test]
+fn my_unit_test() {
+     assert_eq!(2 + 2, 4);
+}
 
-    #[test]
-    #[should_panic(expected = "overflow")]
-    fn test_panic_with_message() {
-        panic!("integer overflow detected");
-    }
+#[test]
+#[should_panic(expected = "overflow")]
+fn test_panic_with_message() {
+     panic!("integer overflow detected");
+}
 
-    #[test]
-    #[ignore]
-    fn expensive_test() {
-        assert_eq!(2 + 2, 4);
-    }
+#[test]
+#[ignore]
+fn expensive_test() {
+     assert_eq!(2 + 2, 4);
+}
 
-    #[bench]
-    fn my_benchmark() {
-        for i in 0..1000 {
-            let _ = i + 1;
-        }
+#[bench]
+fn my_benchmark() {
+     for i in 0..1000 {
+       let _ = i + 1;
+     }
+}
+
+#[test("--skip-heavy")]
+fn my_configurable_test() {
+     if test_runner::current_case_attributes().contains(&"--skip-heavy") {
+     return;
     }
-    ```
+  // ... perform heavier verification when the flag is absent ...
+}
+
+#[test(retry_on_failure)]
+fn flaky_test_recovers() {
+    static FIRST_TRY: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(true);
+    if FIRST_TRY
+    .compare_exchange(true, false, std::sync::atomic::Ordering::Relaxed, std::sync::atomic::Ordering::Relaxed)
+    .is_ok() {
+      panic!("First try!");
+    }
+}
+```
 
 3. **Export a Test Runner:**
 
-  ```rust
-  use libtest_mimic::Arguments;
-  use test_runner;
+```rust
+use libtest_mimic::Arguments;
+use test_runner;
 
-  #[no_mangle]
-  pub extern "C" fn some_tests_main() -> i32 {
-    let tests = satchel::get_tests!().map(|t| *t).collect::<Vec<_>>();
-    let args = Arguments::from_args();
-    if test_runner::run_tests(tests, args) { 0 } else { 1 }
-  }
-  ```
+#[no_mangle]
+pub extern "C" fn some_tests_main() -> i32 {
+  let tests = satchel::get_tests!().map(|t| *t).collect::<Vec<_>>();
+  let args = Arguments::from_args();
+  if test_runner::run_tests(tests, args) { 0 } else { 1 }
+}
+```
 
 4. **Implement `run_tests`:**
 
