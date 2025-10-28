@@ -28,6 +28,7 @@ pub struct TestCase {
     pub test_fn: TestFn,
     pub should_panic: Option<ShouldPanic>,
     pub ignore: Option<Ignore>,
+    pub case_attributes: &'static [&'static str],
 }
 
 pub mod test_harness {
