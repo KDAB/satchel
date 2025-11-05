@@ -1,3 +1,7 @@
+
+//! Procedural attribute macros used by the [satchel](https://docs.rs/satchel/latest/satchel/) crate to register tests and benchmarks.
+//!
+//! Do not use this crate directly, but through the re-exports in the [satchel](https://docs.rs/satchel/latest/satchel/) crate.
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use syn::spanned::Spanned;
@@ -270,6 +274,7 @@ fn parse_ignore_attr(attrs: &[syn::Attribute]) -> Result<proc_macro2::TokenStrea
     Err(syn::Error::new_spanned(attr, IGNORE_UNSUPPORTED))
 }
 
+#[doc = "Please use this macro via the re-export in [satchel](https://docs.rs/satchel/latest/satchel/)."]
 #[proc_macro_attribute]
 pub fn test(attr: TokenStream, item: TokenStream) -> TokenStream {
     expand_test_or_bench(
@@ -280,6 +285,7 @@ pub fn test(attr: TokenStream, item: TokenStream) -> TokenStream {
     )
 }
 
+#[doc = "Please use this macro via the re-export in [satchel](https://docs.rs/satchel/latest/satchel/)."]
 #[proc_macro_attribute]
 pub fn bench(attr: TokenStream, item: TokenStream) -> TokenStream {
     expand_test_or_bench(
