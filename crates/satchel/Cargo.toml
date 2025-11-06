@@ -8,7 +8,7 @@ description = "Test registration and discovery crate. Satchel uses linkme for te
 
 [dependencies]
 linkme = "0.3"
-satchel-macro = "0.3.0"
+satchel-macro = { path = "../satchel-macro" }
 
 [dev-dependencies]
 trybuild = "1"
